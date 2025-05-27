@@ -28,7 +28,7 @@
       </DesktopSettings>
     </Form>
   </FormSettings>
-  <Permissions>ReadWriteMailbox</Permissions>
+  <Permissions>ReadWriteItem</Permissions>
   <Rule xsi:type="RuleCollection" Mode="Or">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
   </Rule>
@@ -90,13 +90,16 @@
               </Group>
             </OfficeTab>
           </ExtensionPoint>
+
+          <!-- Can configure other command surface extension points for add-in command support. -->
+
           <!-- Enable launching the add-in on the included event. -->
           <ExtensionPoint xsi:type="LaunchEvent">
             <LaunchEvents>
               <LaunchEvent Type="OnMessageSend" FunctionName="onMessageSendHandler" SendMode="PromptUser" />
             </LaunchEvents>
-            <!-- Corrected to point to the JavaScript file -->
-            <SourceLocation resid="JSRuntime.Url"/>
+            <!-- Identifies the runtime to be used (also referenced by the Runtime element). -->
+            <SourceLocation resid="WebViewRuntime.Url"/>
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
@@ -111,6 +114,7 @@
         <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html" />
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html" />
         <bt:Url id="WebViewRuntime.Url" DefaultValue="https://localhost:3000/commands.html" />
+        <!-- Entry needed for Outlook on Windows. -->
         <bt:Url id="JSRuntime.Url" DefaultValue="https://localhost:3000/launchevent.js" />
       </bt:Urls>
       <bt:ShortStrings>
