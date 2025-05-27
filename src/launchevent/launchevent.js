@@ -3,7 +3,7 @@
  * See LICENSE in the project root for license information.
  */
 
-const customerDomain = "@bizwind.co.jp";
+const customerDomain = "@your-domain.com";
 
 function onMessageSendHandler(event) {
   let externalRecipients = [];
