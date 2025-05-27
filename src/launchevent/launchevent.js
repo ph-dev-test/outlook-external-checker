@@ -9,29 +9,42 @@ function onMessageSendHandler(event) {
   Office.context.mailbox.item.to.getAsync((asyncResult) => {
     if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
       const recipients = asyncResult.value;
-      // Log all recipient details for debugging
-      console.log("Recipients found:", recipients);
+      // Log full recipient objects and raw email addresses
+      console.log("Full recipient objects:", JSON.stringify(recipients, null, 2));
       console.log("Raw email addresses:", recipients.map(r => r.emailAddress));
 
       const externalRecipients = recipients
         .filter(recipient => {
-          let email = recipient.emailAddress || "";
-          console.log("Raw value for recipient:", email);
-          
-          // Clean the email: trim, convert to lowercase, and extract from potential display name format
-          email = email.trim().toLowerCase();
-          // Handle formats like "Display Name <email@domain.com>"
-          const match = email.match(/<([^>]+)>/);
+          // Default to empty string if emailAddress is undefined or null
+          let rawEmail = recipient.emailAddress || "";
+          console.log("Raw email value:", rawEmail);
+
+          // Clean the email: trim and convert to lowercase
+          let email = rawEmail.trim().toLowerCase();
+
+          // Step 1: Handle "Display Name <email@domain.com>" format
+          let match = email.match(/<([^>]+)>/);
           if (match) {
             email = match[1];
+            console.log("Extracted from angle brackets:", email);
           }
-          // Fallback: if no angle brackets, try to extract the email part
-          else if (email.includes("@")) {
-            email = email.split(" ").pop(); // Take the last part, assuming email is after display name
+
+          // Step 2: Fallback - split by spaces and find part with @
+          if (!match && email.includes("@")) {
+            const parts = email.split(" ");
+            email = parts.find(part => part.includes("@")) || email;
+            console.log("Extracted from split:", email);
           }
-          
+
+          // Step 3: Final check - ensure we have a valid email-like string
+          if (!email.includes("@")) {
+            console.log("Warning: No valid email format detected for:", rawEmail);
+            return false; // Treat invalid format as internal to avoid false popup
+          }
+
+          // Check if email ends with customer domain
           const isExternal = !email.endsWith(customerDomain.toLowerCase());
-          console.log(`Processed email: ${email}, isExternal: ${isExternal}`);
+          console.log(`Final processed email: ${email}, isExternal: ${isExternal}`);
           return isExternal;
         })
         .map(recipient => recipient.emailAddress);
