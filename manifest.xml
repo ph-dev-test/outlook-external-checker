@@ -4,8 +4,8 @@
   <Version>1.0.0.0</Version>
   <ProviderName>Contoso</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="outlook-external-checker"/>
-  <Description DefaultValue="A template to get started."/>
+  <DisplayName DefaultValue="Email Checker"/>
+  <Description DefaultValue="Helps prevent accidental data leaks by alerting users when emailing outside the company"/>
   <IconUrl DefaultValue="https://ph-dev-test.github.io/outlook-external-checker/assets/icon-64.png"/>
   <HighResolutionIconUrl DefaultValue="https://ph-dev-test.github.io/outlook-external-checker/assets/icon-128.png"/>
   <SupportUrl DefaultValue="https://www.contoso.com/help"/>
