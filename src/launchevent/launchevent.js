@@ -1,5 +1,7 @@
+// Define the customer domain
 const customerDomain = "@bizwind.co.jp";
 
+// Handler for the OnMessageSend event
 function onMessageSendHandler(event) {
   let externalRecipients = [];
 
@@ -16,14 +18,17 @@ function onMessageSendHandler(event) {
         email = email.trim().toLowerCase();
         const domain = customerDomain.toLowerCase();
         
+        // Debug: Log each email and the comparison result
         console.log(`Checking email: ${email}`);
         console.log(`Ends with ${domain}? ${email.endsWith(domain)}`);
 
+        // Check if the email does NOT end with the customer domain
         if (!email.endsWith(domain)) {
           externalRecipients.push(email);
         }
       });
 
+      // If there are external recipients, show the popup
       if (externalRecipients.length > 0) {
         console.log(`External recipients found: ${externalRecipients.join(", ")}`);
         event.completed({
@@ -44,6 +49,15 @@ function onMessageSendHandler(event) {
   });
 }
 
-if (Office.context.platform === Office.PlatformType.PC || Office.context.platform == null) {
-  Office.actions.associate("onMessageSendHandler", onMessageSendHandler);
-}
+// Ensure Office API is ready before associating the event handler
+Office.onReady((info) => {
+  // Check platform and associate the event handler
+  if (info.platform === Office.PlatformType.PC || info.platform == null) {
+    console.log("Associating onMessageSendHandler for platform: " + (info.platform || "unknown"));
+    Office.actions.associate("onMessageSendHandler", onMessageSendHandler);
+  } else {
+    console.log("Platform not supported for event handler: " + info.platform);
+  }
+}).catch((error) => {
+  console.log("Error initializing Office API: " + error);
+});
