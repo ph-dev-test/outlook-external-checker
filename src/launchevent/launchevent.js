@@ -8,13 +8,24 @@ function onMessageSendHandler(event) {
       const recipients = asyncResult.value;
 
       recipients.forEach((recipient) => {
-        const email = recipient.emailAddress.trim().toLowerCase();
-        if (!email.endsWith(customerDomain)) {
+        // Extract just the email address, handle potential formatting
+        let email = recipient.emailAddress;
+        // Remove display name or angle brackets if present (e.g., "Name <email>")
+        const match = email.match(/<(.+?)>|[^<>\s]+/);
+        email = match ? match[1] || match[0] : email;
+        email = email.trim().toLowerCase();
+        const domain = customerDomain.toLowerCase();
+        
+        console.log(`Checking email: ${email}`);
+        console.log(`Ends with ${domain}? ${email.endsWith(domain)}`);
+
+        if (!email.endsWith(domain)) {
           externalRecipients.push(email);
         }
       });
 
       if (externalRecipients.length > 0) {
+        console.log(`External recipients found: ${externalRecipients.join(", ")}`);
         event.completed({
           allowEvent: false,
           errorMessage:
@@ -23,9 +34,11 @@ function onMessageSendHandler(event) {
             "\n\nAre you sure you want to send it?",
         });
       } else {
+        console.log("No external recipients found, allowing send.");
         event.completed({ allowEvent: true });
       }
     } else {
+      console.log("Failed to get recipients, allowing send as fallback.");
       event.completed({ allowEvent: true });
     }
   });
