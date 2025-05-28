@@ -6,8 +6,8 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Email Checker"/>
   <Description DefaultValue="Helps prevent accidental data leaks by alerting users when emailing outside the company"/>
-  <IconUrl DefaultValue="https://ph-dev-test.github.io/outlook-external-checker/assets/icon-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://ph-dev-test.github.io/outlook-external-checker/assets/icon-128.png"/>
+  <IconUrl DefaultValue="https://ph-dev-test.github.io/outlook-external-checker/assets/icon-64_logo.png"/>
+  <HighResolutionIconUrl DefaultValue="https://ph-dev-test.github.io/outlook-external-checker/assets/icon-128_logo.png"/>
   <SupportUrl DefaultValue="https://www.contoso.com/help"/>
   <AppDomains>
     <AppDomain>https://www.contoso.com</AppDomain>
