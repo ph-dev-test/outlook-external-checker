@@ -80,8 +80,12 @@ async function onMessageSendHandler(event) {
         if (externalRecipients.length > 0) {
           const message =
             "You are sending this email to external recipients:\n\n" +
+            "__________________________________________________\n\n" +
             "Domain list\n" +
-            Array.from(externalDomains).join("\n") +
+            Array.from(externalDomains)
+            .map(domain => `→${domain}`) // Add arrow before each domain
+            .join("\n") +
+            "\n__________________________________________________" +
             "\n\nEmail list\n" +
             externalRecipients.join("\n") +
             "\n\nAre you sure you want to send it?";
