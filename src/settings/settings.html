@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Domain Settings</title>
+  <meta charset="utf-8" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005a9e;
+    }
+    .message {
+      margin-top: 10px;
+      color: green;
+      display: none;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Domain Settings</h2>
+    <p>Enter internal domains (e.g., @example.com, @company.com). Separate multiple domains with commas.</p>
+    <label for="domains">Internal Domains:</label>
+    <input type="text" id="domains" placeholder="@example.com, @company.com" />
+    <button onclick="saveDomains()">Save</button>
+    <button onclick="clearDomains()">Clear Domains</button>
+    <div id="message" class="message"></div>
+  </div>
+
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script>
+    Office.onReady(() => {
+      loadDomains();
+    });
+
+    function loadDomains() {
+      const domainsInput = document.getElementById("domains");
+      let internalDomains = Office.context.roamingSettings.get("internalDomains") || [];
+
+      if (internalDomains.length > 0) {
+        // Display saved domains if they exist
+        domainsInput.value = internalDomains.join(", ");
+      } else {
+        // Fetch and display the user's email domain as default
+        try {
+          const userEmail = Office.context.mailbox.userProfile.emailAddress;
+          if (userEmail && userEmail.includes('@')) {
+            const defaultDomain = userEmail.substring(userEmail.lastIndexOf('@')).toLowerCase();
+            domainsInput.value = defaultDomain;
+            domainsInput.placeholder = `e.g., ${defaultDomain}`;
+          } else {
+            domainsInput.value = "";
+            domainsInput.placeholder = "@example.com";
+            showMessage("Unable to retrieve user email domain. Please contact support.", true);
+          }
+        } catch (error) {
+          console.error(`Error fetching user email: ${error.message}`);
+          domainsInput.value = "";
+          domainsInput.placeholder = "@example.com";
+          showMessage("Error retrieving user email domain. Please contact support.", true);
+        }
+      }
+    }
+
+    function saveDomains() {
+      const domainsInput = document.getElementById("domains").value;
+      const messageDiv = document.getElementById("message");
+
+      const domains = domainsInput
+        .split(",")
+        .map((d) => d.trim().toLowerCase())
+        .filter((d) => d.startsWith("@") && d.length > 1);
+
+      if (domains.length === 0) {
+        showMessage("Please enter at least one valid domain starting with '@'.", true);
+        return;
+      }
+
+      Office.context.roamingSettings.set("internalDomains", domains);
+      Office.context.roamingSettings.saveAsync((result) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          showMessage("Domains saved successfully!");
+        } else {
+          showMessage(`Error saving domains: ${result.error.message}`, true);
+        }
+      });
+    }
+
+    function clearDomains() {
+      Office.context.roamingSettings.remove("internalDomains");
+      Office.context.roamingSettings.saveAsync((result) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          loadDomains(); // Reload to show default domain
+          showMessage("Domains cleared successfully!");
+        } else {
+          showMessage(`Error clearing domains: ${result.error.message}`, true);
+        }
+      });
+    }
+
+    function showMessage(message, isError = false) {
+      const messageDiv = document.getElementById("message");
+      messageDiv.textContent = message;
+      messageDiv.className = `message ${isError ? "error" : ""}`;
+      messageDiv.style.display = "block";
+    }
+  </script>
+</body>
+</html>
