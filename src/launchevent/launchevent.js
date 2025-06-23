@@ -1,6 +1,3 @@
-// Define the customer domain
-const customerDomain = "@bizwind.co.jp";
-
 // Utility to add a timeout to a promise
 const withTimeout = (promise, ms) => {
   const timeout = new Promise((_, reject) =>
@@ -19,25 +16,43 @@ async function onMessageSendHandler(event) {
         let externalRecipients = [];
         let externalDomains = new Set();
 
+        // Load internal domains from roamingSettings or fallback to user's email domain
+        let internalDomains = Office.context.roamingSettings.get("internalDomains") || [];
+        if (internalDomains.length === 0) {
+          const userEmail = Office.context.mailbox.userProfile.emailAddress;
+          if (!userEmail || !userEmail.includes('@')) {
+            console.error("Invalid or missing user email, blocking send for safety.");
+            return {
+              allowEvent: false,
+              errorMessage: "Error: Unable to determine internal domain. Please contact support.",
+            };
+          }
+          internalDomains = [userEmail.substring(userEmail.lastIndexOf('@')).toLowerCase()];
+        }
+        console.log(`Internal domains: ${internalDomains.join(', ')}`);
+
         // Function to check a single email address
         function checkEmail(email, field) {
-          let cleanedEmail = email.trim().toLowerCase();
-          // Robust email extraction
-          const match = cleanedEmail.match(/<(.+?)>|([^\s<>]+)/);
-          cleanedEmail = match ? (match[1] || match[0]) : cleanedEmail;
-
-          // Basic email validation
-          if (!cleanedEmail.includes("@")) {
-            console.log(`Invalid email skipped: ${cleanedEmail}`);
+          if (!email) {
+            console.log(`Empty email in ${field}, skipping.`);
             return;
           }
-
-          const domain = customerDomain.toLowerCase();
-          console.log(`Checking ${field} email: ${cleanedEmail}`);
-          if (!cleanedEmail.endsWith(domain)) {
+          let cleanedEmail = email.trim().toLowerCase();
+          const match = cleanedEmail.match(/<(.+?)>|[^<>\s]+/);
+          if (!match) {
+            console.log(`Invalid email format in ${field}: ${email}`);
+            return;
+          }
+          cleanedEmail = match[1] || match[0];
+          if (!cleanedEmail.includes('@')) {
+            console.log(`Skipping invalid email in ${field}: ${cleanedEmail}`);
+            return;
+          }
+          const isExternal = !internalDomains.some(domain => cleanedEmail.endsWith(domain));
+          if (isExternal) {
             externalRecipients.push(`${field}: ${cleanedEmail}`);
-            const emailDomain = `@${cleanedEmail.split('@')[1]}`;
-            externalDomains.add(emailDomain);
+            const domain = `@${cleanedEmail.split('@')[1]}`;
+            externalDomains.add(domain);
           }
         }
 
@@ -57,36 +72,40 @@ async function onMessageSendHandler(event) {
           ),
         ]);
 
-        // Process recipients
+        // Process To recipients
         if (toResult.status === Office.AsyncResultStatus.Succeeded) {
           toResult.value.forEach((recipient) => checkEmail(recipient.emailAddress, "To"));
         } else {
-          console.log("Failed to get To recipients:", toResult.error?.message);
+          console.error(`Failed to get To recipients: ${toResult.error?.message}`);
         }
 
+        // Process CC recipients
         if (ccResult.status === Office.AsyncResultStatus.Succeeded) {
           ccResult.value.forEach((recipient) => checkEmail(recipient.emailAddress, "CC"));
         } else {
-          console.log("Failed to get CC recipients:", ccResult.error?.message);
+          console.error(`Failed to get CC recipients: ${ccResult.error?.message}`);
         }
 
+        // Process BCC recipients
         if (bccResult.status === Office.AsyncResultStatus.Succeeded) {
           bccResult.value.forEach((recipient) => checkEmail(recipient.emailAddress, "BCC"));
         } else {
-          console.log("Failed to get BCC recipients:", bccResult.error?.message);
+          console.error(`Failed to get BCC recipients: ${bccResult.error?.message}`);
         }
 
         // Decide whether to show popup
         if (externalRecipients.length > 0) {
+          console.log(`External recipients found: ${externalRecipients.join(", ")}`);
+          console.log(`External domains found: ${Array.from(externalDomains).join(", ")}`);
           const message =
             "You are sending this email to external recipients:\n\n" +
             "__________________________________________________\n\n" +
             "Domain list\n" +
             Array.from(externalDomains)
-            .map(domain => `→${domain}`) // Add arrow before each domain
-            .join("\n") +
-            "\n__________________________________________________" +
-            "\n\nEmail list\n" +
+              .map(domain => `→${domain}`)
+              .join("\n") +
+            "\n__________________________________________________\n\n" +
+            "Email list\n" +
             externalRecipients.join("\n") +
             "\n\nAre you sure you want to send it?";
           return { allowEvent: false, errorMessage: message };
